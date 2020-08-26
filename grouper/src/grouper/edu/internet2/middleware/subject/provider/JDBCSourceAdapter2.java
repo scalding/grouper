@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import edu.internet2.middleware.subject.Source;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -1440,6 +1441,43 @@ public class JDBCSourceAdapter2 extends JDBCSourceAdapter {
     }
     
     return this.subjectIdentifierAttributes;
+  }
+
+  /**
+   * @see Source#getSubjectIdentifierAttributesAll()
+   */
+  public Map<Integer, String> getSubjectIdentifierAttributesAll() {
+    if (this.subjectIdentifierAttributesAll == null) {
+      synchronized (JDBCSourceAdapter2.class) {
+        if (this.subjectIdentifierAttributesAll == null) {
+          Map<Integer, String> temp = new LinkedHashMap<>();
+          // No, we don't want just ONE.  Support as many as there are.
+          // This is the param from JDBCSourceAdapter, not jdbc2.
+          for(int i = 0; ; i++) {
+            String value = getInitParam("subjectIdentifierAttribute" + i);
+            if (value == null) {
+              break;
+            }
+            temp.put(i, value.toLowerCase());
+          }
+
+          // if we still don't have anything...
+          // look at subjectIdentifierCols which is documented in examples
+          if (temp.isEmpty()) {
+            int i = 0;
+            for (String identifierCol : SubjectUtils.nonNull(subjectIdentifierCols)) {
+              String attribute;
+              if ((attribute = subjectAttributeColToName.get(identifierCol)) != null) {
+                temp.put(i, attribute.toLowerCase());
+                i++;
+              }
+            }
+          }
+          this.subjectIdentifierAttributesAll = temp;
+        }
+      }
+    }
+    return this.subjectIdentifierAttributesAll;
   }
 
 //  /**
